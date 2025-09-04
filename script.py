@@ -19,76 +19,126 @@ def temperature_input():
                 2: "Enter a temperature in Celsius: ",
                 3: "Enter a temperature in Kelvin: "
             }
-            user_input = float(input(prompts[unit_choice]))
+            user_temp_input = float(input(prompts[unit_choice]))
 
-            # 3) Validate physical bounds (below absolute zero is not allowed)
+            # 3) Validate (below absolute zero is not allowed)
             if unit_choice == 1:
-                # Absolute zero in F = -459.67; also cap at ~1e13 F to catch typos
-                if user_input < -459.67 or user_input >= 10_000_000_000_000:
+                # Absolute zero in F = -459.67, cap at 10 trillion degrees
+                if user_temp_input < -459.67 or user_temp_input >= 10_000_000_000_000:
                     print("Woah! That temperature is impossible! Please try again.")
                     continue
             elif unit_choice == 2:
-                # Absolute zero in C = -273.15; cap at ~5.5e12 C
-                if user_input < -273.15 or user_input >= 5_500_000_000_000:
+                # Absolute zero in C = -273.15; cap at 5.5 trillion degrees
+                if user_temp_input < -273.15 or user_temp_input >= 5_500_000_000_000:
                     print("Woah! That temperature is impossible! Please try again.")
                     continue
             else:  # Kelvin
                 # Absolute zero in K = 0
-                if user_input < 0:
+                if user_temp_input < 0:
                     print("Woah! That temperature is impossible! Please try again.")
                     continue
 
-            # If we got here, both inputs are valid; return the numeric temperature
-            return user_input
+            # If we got here, both inputs are valid return the temperature number
+            return user_temp_input, unit_choice
 
         except ValueError:
             print("Invalid value. Please try again.")
 
+def conversion_input(user_unit_input):
+    units = {1: "Fahrenheit", 2: "Celsius", 3: "Kelvin"}
+    while True:
+        try:
+            user_input = int(input(
+                f"What would you like to convert to?\n"
+                "1. Fahrenheit (F)\n"
+                "2. Celsius (C)\n"
+                "3. Kelvin (K)\n"
+                "Enter 1, 2, or 3: "
+            ))
+            if user_input not in (1, 2, 3):
+                print("Invalid selection. Please enter 1, 2, or 3.")
+                continue
 
-def converter(conversion, temperature):
-    # F to C
-    if conversion == 1:
-        result = (temperature - 32) * 0.5555
+            # Doesn't allow conversion of the same unit
+            if user_input == user_unit_input:
+                print(f"You are already using {units[user_unit_input]}. Please choose a different unit.")
+                continue
+            
+            # If we got here, conversion choice is returned
+            return user_input
+        
+        except ValueError:
+            print("Invalid value. Please try again.")
 
-    # C to F
-    else:
-        result = (temperature * 1.8) + 32
-    
-    return result
+def converter(user_temp_input, user_unit_input, user_conversion_choice):
+    # Fahrenheit conversions
+    if user_unit_input == 1:
+        # Celsius
+        if user_conversion_choice == 2:
+            result = (user_temp_input - 32) * 0.5555
+        # Kelvin
+        if user_conversion_choice == 3:
+            result = ((user_temp_input - 32) * 0.5555) + 273.15
+
+    # Celsius conversions
+    if user_unit_input == 2:
+        # Fahrenheit
+        if user_conversion_choice == 1:
+            result = (user_temp_input * 1.8) + 32
+        # Kelvin
+        if user_conversion_choice == 3:
+            result = user_temp_input + 273.15
+
+    # Kelvin conversions
+    if user_unit_input == 3:
+        # Fahrenheit
+        if user_conversion_choice == 1:
+            result = ((user_temp_input - 273.15) * 1.8) + 32
+        # Celsius
+        if user_conversion_choice == 2:
+            result = user_temp_input - 273.15
+
+    # Rounds result to 2 decimal places and returns
+    return round(result, 2)
 
 def main():
     print("Welcome to the temperature converter\n")
-    while True:
 
-        try:
-            user_temp = temperature_input(user_conversion_choice)
-        except:
-            print("An error has occured with: user_conversion_choice")
-            return
-
-        try:
-            result = converter(user_conversion_choice, user_temp)
-        except:
-            print("An error has occured with: converter")
-            return
-
-        if user_conversion_choice == 1:
-            print(f"{user_temp}°F is equivalent to {result}°C.")
-        else: 
-            print(f"{user_temp}°C is equivalent to {result}°F.")
-
+    # Get user's temperature
+    try:
+        user_temp_input, user_unit_input = temperature_input()
+    except:
+        print("An error has occured with: temperature_input")
+        return
+    
+    # Get conversion input
+    try:
+        user_conversion_choice = conversion_input(user_unit_input)
+    except:
+        print("An error has occured with: conversion_input")
+    try:
+        # Convert temps
+        result = converter(user_temp_input, user_unit_input, user_conversion_choice)
         
-        while True:
-            try:
-                user_loop_choice = input("\nWould you like to do another conversion? (y/n)").lower()
-                if user_loop_choice == "y":
-                    break
-                elif user_loop_choice == "n":
-                    return
-                else: 
-                    print("Invalid value. Please try again")
-            except ValueError:
-                print("An error has occured with: display_output")
+        units = {1: "F", 2: "C", 3: "K"}
+
+        # Print finalized result
+        print(f"{user_temp_input}°{units[user_unit_input]} is equal to {result}°{units[user_conversion_choice]}")
+
+    except:
+        print("An error has occured with: converter")
+        return
+    
+    # Loop for asking if the user wants to do another conversion
+    while True:
+        user_loop_choice = input("\nWould you like to do another conversion? (y/n) ").strip().lower()
+        if user_loop_choice == "y":
+            print()
+            return main()  # restart main
+        elif user_loop_choice == "n":
+            return
+        else:
+            print("Invalid value. Please try again.")
 
 if __name__ == "__main__":
     main()
